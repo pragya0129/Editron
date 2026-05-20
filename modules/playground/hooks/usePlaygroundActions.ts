@@ -156,31 +156,34 @@ export function usePlaygroundActions({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.shiftKey && e.key === "s") {
+      const isModKey = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      if (isModKey && !e.shiftKey && key === "s") {
         e.preventDefault();
         handleSave();
       }
-      if (e.ctrlKey && e.shiftKey && e.key === "S") {
+      if (isModKey && e.shiftKey && key === "s") {
         e.preventDefault();
         handleSaveAll();
       }
-      if ((e.ctrlKey && e.key === "k") || (e.ctrlKey && e.shiftKey && e.key === "P")) {
+      if ((isModKey && key === "k") || (isModKey && e.shiftKey && key === "p")) {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
       }
-      if (e.ctrlKey && !e.shiftKey && e.key === "b") {
+      if (isModKey && !e.shiftKey && key === "b") {
         e.preventDefault();
         sidebar.toggleSidebar();
       }
-      if (e.ctrlKey && e.key === "\\") {
+      if (isModKey && e.key === "\\") {
         e.preventDefault();
         setIsPreviewVisible((prev) => !prev);
       }
-      if (e.ctrlKey && e.shiftKey && e.key === "A") {
+      if (isModKey && e.shiftKey && key === "a") {
         e.preventDefault();
         useAI.getState().toggleChat();
       }
-      if (e.ctrlKey && !e.shiftKey && e.key === "w") {
+      if (isModKey && !e.shiftKey && key === "w") {
         e.preventDefault();
         if (activeFileId) closeFile(activeFileId);
       }
