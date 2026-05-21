@@ -297,7 +297,7 @@ const TemplateSelectionModal = ({
               </RadioGroup>
             </div>
 
-            <div className="sticky bottom-2 mx-auto w-fit min-w-[420px] rounded-2xl border border-white/10 bg-[#151517]/70 backdrop-blur-2xl px-5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.45)] flex justify-between items-center gap-4">
+            <div className="sticky bottom-2 mx-auto w-fit w-full max-w-[420px] rounded-2xl border border-white/10 bg-background/70 backdrop-blur-2xl px-5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.45)] flex justify-between items-center gap-4">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock size={14} className="mr-1" />
                 <span>
