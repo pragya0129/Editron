@@ -316,18 +316,7 @@ const TemplateSelectionModal = ({
                           className="sr-only"
                         />
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-2 flex flex-col items-center justify-center p-8 text-center">
-                      <Search size={48} className="text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium">
-                        No templates found
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Try adjusting your search or filters
-                      </p>
-                    </div>
-                  )}
+                    ))}
                 </div>
               </RadioGroup>
             </div>
