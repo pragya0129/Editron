@@ -8,10 +8,6 @@ import { Features } from "@/modules/home/features";
 import { HeroCodeDemo } from "@/modules/home/hero-code";
 import dynamic from "next/dynamic";
 
-const AnimatedShaderBackground = dynamic(
-  () => import("@/components/ui/animated-shader-background"),
-  { ssr: false },
-);
 
 import { CommitsGrid } from "@/components/ui/commits-grid";
 import { cn } from "@/lib/utils";
@@ -70,7 +66,7 @@ export default function Home() {
         <CommitsGrid text="EDITRON" />
       </div>
 
-      <AnimatedShaderBackground />
+      
 
       <main className="pt-20 px-4 max-w-7xl mx-auto space-y-20">
         
