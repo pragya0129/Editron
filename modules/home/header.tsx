@@ -21,7 +21,7 @@ import {
 export function Header() {
     const user = useCurrentUser();
 
-    // ✅ Separate states
+    // ✅ States
     const [shortcutOpen, setShortcutOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -50,7 +50,7 @@ export function Header() {
 
                         <ThemeToggle />
 
-                        {/* ✅ Shortcut Button */}
+                        {/* Shortcut Button */}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -88,9 +88,9 @@ export function Header() {
                         <div className="md:hidden">
                             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
                                 <SheetTrigger asChild>
-                                    <Button size="icon" aria-label="Open menu" title="Open menu">
+                                    <Button size="icon" aria-label="Open menu">
                                         <Menu />
-                                    </Button> 
+                                    </Button>
                                 </SheetTrigger>
 
                                 <SheetContent side="right">
@@ -123,10 +123,10 @@ export function Header() {
                 </div>
             </header>
 
-            {/* ✅ Shortcut Modal */}
+            {/* ✅ FIXED Shortcut Modal */}
             <ShortcutModal
-                isOpen={shortcutOpen}
-                onClose={() => setShortcutOpen(false)}
+                open={shortcutOpen}
+                onOpenChange={setShortcutOpen}
             />
         </>
     );

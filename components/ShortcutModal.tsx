@@ -1,82 +1,38 @@
 "use client";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Button } from "@/components/ui/button";
+
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
-const shortcuts = [
-  {
-    category: "Editor",
-    items: [
-      { key: "Ctrl + S", action: "Save file" },
-      { key: "Ctrl + Z", action: "Undo" },
-      { key: "Ctrl + Shift + Z", action: "Redo" },
-    ],
-  },
-  {
-    category: "Navigation",
-    items: [
-      { key: "Ctrl + P", action: "Open file" },
-      { key: "Ctrl + B", action: "Toggle sidebar" },
-    ],
-  },
-  {
-    category: "Terminal",
-    items: [
-      { key: "Ctrl + `", action: "Open terminal" },
-    ],
-  },
-];
-
-export default function ShortcutModal({ isOpen, onClose }: Props) {
-  if (!isOpen) return null;
-
+export default function ShortcutModal({ open, onOpenChange }: Props) {
   return (
-    <div style={overlay}>
-      <div style={modal}>
-        <h2>Keyboard Shortcuts</h2>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-white dark:bg-gray-900">
+        <DialogHeader>
+          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+        </DialogHeader>
 
-        {shortcuts.map((section) => (
-          <div key={section.category}>
-            <h3>{section.category}</h3>
+        <div className="space-y-2 text-sm">
+          <p><b>Ctrl + K</b> → Open Search</p>
+          <p><b>Esc</b> → Close Modal</p>
+        </div>
 
-            {section.items.map((item, i) => (
-              <div key={i} style={row}>
-                <span>{item.action}</span>
-                <kbd>{item.key}</kbd>
-              </div>
-            ))}
-          </div>
-        ))}
-
-        <button onClick={onClose}>Close</button>
-      </div>
-    </div>
+        <div className="flex justify-end">
+          <Button onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
-
-const overlay = {
-  position: "fixed" as const,
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-};
-
-const modal = {
-  background: "white",
-  padding: "20px",
-  borderRadius: "10px",
-  width: "400px",
-};
-
-const row = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginBottom: "8px",
-};
