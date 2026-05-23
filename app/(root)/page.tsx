@@ -1,4 +1,5 @@
-"use client";
+import { getPopularTemplateSummaries } from "@/lib/templates/actions";
+import { HomePageClient } from "@/components/marketing/home-page-client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ import { TemplateCard } from "@/components/marketing/template-card";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
+export default async function Home() {
+  const popularTemplates = await getPopularTemplateSummaries(4);
 
   const schemaMarkup = {
     "@context": "https://schema.org",
@@ -113,4 +116,8 @@ export default function Home() {
       </main>
     </div>
   );
+}
+      <HomePageClient popularTemplates={popularTemplates} />
+        </div>
+   );
 }

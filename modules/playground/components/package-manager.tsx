@@ -1,6 +1,10 @@
 "use client";
 
+
+import { NPM_REGISTRY_SEARCH_URL } from "@/lib/constants/config";
 import React, { useState, useEffect } from "react";
+import type { TemplateFolder, TemplateItem } from "@/modules/playground/lib/path-to-json";
+import type { WebContainer } from "@webcontainer/api";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,8 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Package, Trash2, Download, Loader2 } from "lucide-react";
-import { useWebContainer } from "@/modules/webcontainers/hooks/useWebContainer";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 interface NpmSearchResult {
@@ -28,8 +30,8 @@ export function PackageManager({
   templateData,
   instance,
 }: {
-  templateData: any;
-  instance: any;
+  templateData: TemplateFolder | null;
+  instance: WebContainer | null;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<NpmSearchResult["objects"]>([]);
@@ -43,7 +45,7 @@ export function PackageManager({
     if (!templateData) return;
     
     // Find package.json
-    const findPkg = (items: any[]): any => {
+    const findPkg = (items: TemplateItem[]): TemplateItem | null => {
       for (const item of items) {
         if (!("folderName" in item) && item.filename === "package" && item.fileExtension === "json") {
           return item;
@@ -77,7 +79,14 @@ export function PackageManager({
 
     setIsSearching(true);
     try {
-      const res = await fetch(`https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(searchQuery)}&size=10`);
+      // Before
+      // const res = await fetch(`https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(searchQuery)}&size=10`);
+
+      //After Refactoring 
+      const res = await fetch(
+      `${NPM_REGISTRY_SEARCH_URL}?text=${encodeURIComponent(searchQuery)}&size=10`
+      );
+
       const data = await res.json();
       setSearchResults(data.objects);
     } catch (_error) {

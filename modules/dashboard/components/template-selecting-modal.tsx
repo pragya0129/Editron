@@ -11,24 +11,32 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import type { TemplateCategory } from "@/lib/templates/types";
+import { getTemplateSummaries } from "@/lib/templates/actions";
 import type { TemplateKey } from "@/lib/template";
 import {
   ChevronRight,
   Search,
-  Star,
+  Check,
+  Plus,
+  Clock,
   Code,
   Server,
   Globe,
-  Zap,
-  Clock,
-  Check,
-  Plus,
   Terminal,
+  Star,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import Image from "next/image";
-import { useState } from "react";
+import type { TemplateSummary } from "@/lib/templates/types";
+import { getTemplateSummaries } from "@/lib/templates/actions";
+
+const ICON_PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3C/svg%3E";
+
+const MAX_STARS = 5;
 
 // TemplateSelectionModal.tsx
 type TemplateSelectionModalProps = {
@@ -41,8 +49,6 @@ type TemplateSelectionModalProps = {
   }) => void;
 };
 
-import { templates } from "@/lib/constants/templates";
-
 const TemplateSelectionModal = ({
   isOpen,
   onClose,
@@ -51,22 +57,66 @@ const TemplateSelectionModal = ({
   const [step, setStep] = useState<"select" | "configure">("select");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState<
-    "all" | "frontend" | "backend" | "fullstack" | "tooling"
-  >("all");
   const [projectName, setProjectName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | "all">("all");
 
-  const filteredTemplates = templates.filter((template) => {
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  const [availableTemplates, setAvailableTemplates] = useState<TemplateSummary[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
 
-    const matchesCategory = category === "all" || template.category === category;
+  const loadTemplates = () => {
+    setIsLoadingTemplates(true);
+    setTemplateError(null);
+    getTemplateSummaries()
+      .then((data) => {
+        setAvailableTemplates(data);
+      })
+      .catch(() => {
+        setTemplateError("Failed to load templates. Please try again.");
+      })
+      .finally(() => {
+        setIsLoadingTemplates(false);
+      });
+  };
 
-    return matchesCategory && matchesSearch;
+  useEffect(() => {
+    loadTemplates();
+  }, []);
 
-  })
+  const categoryTabs: Array<{ key: TemplateCategory | "all"; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "frontend", label: "Frontend" },
+    { key: "backend", label: "Backend" },
+    { key: "fullstack", label: "Fullstack" },
+    { key: "tooling", label: "Tooling" },
+  ];
+
+  const filteredTemplates = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return availableTemplates.filter((template) => {
+      const matchesCategory =
+        selectedCategory === "all" || template.category === selectedCategory;
+      const matchesSearch =
+        normalizedQuery.length === 0 ||
+        template.name.toLowerCase().includes(normalizedQuery) ||
+        template.description.toLowerCase().includes(normalizedQuery) ||
+        template.tags?.some((tag) => tag.toLowerCase().includes(normalizedQuery));
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [availableTemplates, searchQuery, selectedCategory]);
+
+  const selectedTemplateSummary =
+    availableTemplates.find((template) => template.id === selectedTemplate) ?? null;
+
+  const resetSelectionState = () => {
+    setStep("select");
+    setSelectedTemplate(null);
+    setProjectName("");
+    setSearchQuery("");
+    setSelectedCategory("all");
+  };
 
 
   const handleSelectTemplate = (templateId: string) => {
@@ -81,37 +131,20 @@ const TemplateSelectionModal = ({
 
   const handleCreateProject = () => {
     if (selectedTemplate) {
-      const template = templates.find((t) => t.id === selectedTemplate);
       onSubmit({
-        title: projectName || `New ${template?.name} Project`,
+        title: projectName || `New ${selectedTemplateSummary?.name || "Template"} Project`,
         template: selectedTemplate as TemplateKey,
-        description: template?.description
-      })
+        description: selectedTemplateSummary?.description,
+      });
 
       onClose();
       // Reset state for next time
-      setStep("select");
-      setSelectedTemplate(null);
-      setProjectName("");
+      resetSelectionState();
     }
   };
 
   const handleBack = () => {
     setStep("select");
-  };
-
-  const renderStars = (count: number) => {
-    return Array(5)
-      .fill(0)
-      .map((_, i) => (
-        <Star
-          key={i}
-          size={14}
-          className={
-            i < count ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }
-        />
-      ));
   };
 
   return (
@@ -121,9 +154,7 @@ const TemplateSelectionModal = ({
         if (!open) {
           onClose();
           // Reset state when closing
-          setStep("select");
-          setSelectedTemplate(null);
-          setProjectName("");
+          resetSelectionState();
         }
       }}
     >
@@ -154,20 +185,25 @@ const TemplateSelectionModal = ({
                     className="pl-10"
                   />
                 </div>
+              </div>
 
-                <Tabs
-                  defaultValue="all"
-                  className="w-full sm:w-auto"
-                  onValueChange={(value) => setCategory(value as "all" | "frontend" | "backend" | "fullstack" | "tooling")}
-                >
-                  <TabsList className="grid grid-cols-5 w-full sm:w-[500px]">
-                    <TabsTrigger value="all">All</TabsTrigger>
-                    <TabsTrigger value="frontend">Frontend</TabsTrigger>
-                    <TabsTrigger value="backend">Backend</TabsTrigger>
-                    <TabsTrigger value="fullstack">Fullstack</TabsTrigger>
-                    <TabsTrigger value="tooling">Tooling</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+              <div className="flex flex-wrap gap-2">
+                {categoryTabs.map((tab) => (
+                  <Button
+                    key={tab.key}
+                    type="button"
+                    variant={selectedCategory === tab.key ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(tab.key)}
+                    className={
+                      selectedCategory === tab.key
+                        ? "bg-[#E93F3F] hover:bg-[#d03636] text-white"
+                        : ""
+                    }
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
               </div>
 
               <RadioGroup
@@ -175,8 +211,33 @@ const TemplateSelectionModal = ({
                 onValueChange={handleSelectTemplate}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredTemplates.length > 0 ? (
-                    filteredTemplates.map((template) => (
+                  {isLoadingTemplates && (
+                    <div className="col-span-2 flex flex-col items-center justify-center p-12 text-center">
+                      <div className="w-8 h-8 border-2 border-[#E93F3F] border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="text-sm text-muted-foreground">Loading templates...</p>
+                    </div>
+                  )}
+
+                  {!isLoadingTemplates && templateError && (
+                    <div className="col-span-2 flex flex-col items-center justify-center p-8 text-center">
+                      <p className="text-sm text-red-500 mb-3">{templateError}</p>
+                      <Button variant="outline" size="sm" onClick={loadTemplates}>
+                        Retry
+                      </Button>
+                    </div>
+                  )}
+
+                  {!isLoadingTemplates && !templateError && filteredTemplates.length === 0 && (
+                    <div className="col-span-2 flex flex-col items-center justify-center p-8 text-center">
+                      <Search size={48} className="text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium">No templates found</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Try adjusting your search or filters
+                      </p>
+                    </div>
+                  )}
+
+                  {!isLoadingTemplates && !templateError && filteredTemplates.map((template) => (
                       <div
                         key={template.id}
                         className={`relative flex p-6 border rounded-lg cursor-pointer transition-all duration-300 hover:scale-[1.02]
@@ -187,76 +248,69 @@ const TemplateSelectionModal = ({
                     `}
                         onClick={() => handleSelectTemplate(template.id)}
                       >
-                        <div className="absolute top-4 right-4 flex gap-1">
-                          {renderStars(template.popularity)}
-                        </div>
-
                         {selectedTemplate === template.id && (
                           <div className="absolute top-2 left-2 bg-[#E93F3F] text-white rounded-full p-1">
                             <Check size={14} />
                           </div>
                         )}
 
-                        <div className="flex gap-4">
-                          <div
-                            className="relative w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-full"
-                            style={{ backgroundColor: `${template.color}15` }}
-                          >
-                            <Image
-                              src={template.icon || "/placeholder.svg"}
-                              alt={`${template.name} icon`}
-                              width={40}
-                              height={40}
-                              className="object-contain"
-                            />
-                          </div>
+                          <div className="flex gap-4">
+                            <div
+                              className="relative w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-full"
+                              style={getIconTileStyle(template.color)}
+                            >
+                              <IconWithFallback src={template.icon} alt={`${template.name} icon`} size={40} />
+                            </div>
 
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-semibold">
-                                {template.name}
-                              </h3>
-                              <div className="flex gap-1">
-                                {template.category === "frontend" && (
-                                  <Code size={14} className="text-blue-500" />
-                                )}
-                                {template.category === "backend" && (
-                                  <Server
-                                    size={14}
-                                    className="text-green-500"
-                                  />
-                                )}
-                                {template.category === "fullstack" && (
-                                  <Globe
-                                    size={14}
-                                    className="text-purple-500"
-                                  />
-                                )}
-                                {template.category === "tooling" && (
-                                  <Terminal
-                                    size={14}
-                                    className="text-orange-500"
-                                  />
-                                )}
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-lg font-semibold">
+                                  {template.name}
+                                </h3>
+                                <div className="flex gap-1">
+                                  {(template.category === "frontend") && <Code size={14} className="text-blue-500" />}
+                                  {(template.category === "backend") && <Server size={14} className="text-green-500" />}
+                                  {(template.category === "fullstack") && <Globe size={14} className="text-purple-500" />}
+                                  {(template.category === "tooling") && <Terminal size={14} className="text-orange-500" />}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 mb-2" aria-label={`Popularity ${template.popularity ?? 0} out of ${MAX_STARS}`}>
+                                {Array.from({ length: MAX_STARS }, (_, index) => {
+                                  const active = (template.popularity ?? 0) > index;
+
+                                  return (
+                                    <Star
+                                      key={`${template.id}-star-${index}`}
+                                      size={13}
+                                      className={active ? "text-amber-500 fill-amber-500" : "text-muted-foreground/30"}
+                                    />
+                                  );
+                                })}
+                              </div>
+
+                              <p className="text-sm text-muted-foreground mb-3">
+                                {template.description}
+                              </p>
+
+                              <div className="flex flex-wrap gap-2">
+                                {template.tags?.slice(0,3).map((tag) => (
+                                  <span key={tag} className="text-xs px-2 py-1 bg-muted/20 rounded-full text-muted-foreground">{tag}</span>
+                                ))}
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {template.features.slice(0, 3).map((feature) => (
+                                  <span
+                                    key={`${template.id}-${feature}`}
+                                    className="text-xs px-2 py-1 rounded-full border border-border/70 bg-background/80 text-foreground/80"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
                               </div>
                             </div>
-
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {template.description}
-                            </p>
-
-                            <div className="flex flex-wrap gap-2 mt-auto">
-                              {template.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs px-2 py-1 border rounded-2xl"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
                           </div>
-                        </div>
 
                         <RadioGroupItem
                           value={template.id}
@@ -264,23 +318,12 @@ const TemplateSelectionModal = ({
                           className="sr-only"
                         />
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-2 flex flex-col items-center justify-center p-8 text-center">
-                      <Search size={48} className="text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium">
-                        No templates found
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Try adjusting your search or filters
-                      </p>
-                    </div>
-                  )}
+                    ))}
                 </div>
               </RadioGroup>
             </div>
 
-            <div className="flex justify-between gap-3 mt-4 pt-4 border-t">
+            <div className="sticky bottom-2 mx-auto w-fit w-full max-w-[420px] rounded-2xl border border-white/10 bg-background/70 backdrop-blur-2xl px-5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.45)] flex justify-between items-center gap-4">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock size={14} className="mr-1" />
                 <span>
@@ -309,8 +352,7 @@ const TemplateSelectionModal = ({
                 Configure Your Project
               </DialogTitle>
               <DialogDescription>
-                {templates.find((t) => t.id === selectedTemplate)?.name} project
-                configuration
+                {selectedTemplateSummary?.name || "Selected template"} project configuration
               </DialogDescription>
             </DialogHeader>
 
@@ -326,17 +368,38 @@ const TemplateSelectionModal = ({
               </div>
 
               <div className="p-4 shadow-[0_0_0_1px_#E93F3F,0_8px_20px_rgba(233,63,63,0.15)] rounded-lg border">
-                <h3 className="font-medium mb-2">Selected Template Features</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {templates
-                    .find((t) => t.id === selectedTemplate)
-                    ?.features.map((feature) => (
-                      <div key={feature} className="flex items-center gap-2">
-                        <Zap size={14} className="text-[#E93F3F]" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                </div>
+                <h3 className="font-medium mb-2">Selected Template</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTemplateSummary?.description || "Template details will appear here after selection."}
+                </p>
+                {selectedTemplateSummary && (
+                  <>
+                    <div className="mt-3 flex items-center gap-1" aria-label={`Popularity ${selectedTemplateSummary.popularity ?? 0} out of ${MAX_STARS}`}>
+                      {Array.from({ length: MAX_STARS }, (_, index) => {
+                        const active = (selectedTemplateSummary.popularity ?? 0) > index;
+
+                        return (
+                          <Star
+                            key={`${selectedTemplateSummary.id}-summary-star-${index}`}
+                            size={13}
+                            className={active ? "text-amber-500 fill-amber-500" : "text-muted-foreground/30"}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedTemplateSummary.features.map((feature) => (
+                        <span
+                          key={`${selectedTemplateSummary.id}-${feature}`}
+                          className="text-xs px-2 py-1 rounded-full border border-border/70 bg-background/80 text-foreground/80"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -359,3 +422,39 @@ const TemplateSelectionModal = ({
 };
 
 export default TemplateSelectionModal;
+
+function IconWithFallback({ src, alt, size = 28 }: { src?: string; alt?: string; size?: number }) {
+  const [current, setCurrent] = useState(src || ICON_PLACEHOLDER);
+
+  const tryFallback = () => {
+    setCurrent(ICON_PLACEHOLDER);
+  };
+
+  return (
+    <Image
+      src={current}
+      alt={alt ?? ""}
+      width={size}
+      height={size}
+      className="object-contain"
+      unoptimized
+      onError={tryFallback}
+    />
+  );
+}
+
+function getIconTileStyle(color?: string): CSSProperties {
+  if (!color) {
+    return { backgroundColor: "rgba(233, 63, 63, 0.08)" };
+  }
+
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    const red = parseInt(color.slice(1, 3), 16);
+    const green = parseInt(color.slice(3, 5), 16);
+    const blue = parseInt(color.slice(5, 7), 16);
+
+    return { backgroundColor: `rgba(${red}, ${green}, ${blue}, 0.12)` };
+  }
+
+  return { backgroundColor: color };
+}
