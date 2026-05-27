@@ -431,6 +431,13 @@ const PlaygroundEditor = ({
       if (playgroundId) {
         destroyYDoc(playgroundId);
       }
+      
+      // Dispose all Monaco models on unmount to prevent memory leaks
+      if (monacoRef.current) {
+        monacoRef.current.editor.getModels().forEach((model) => {
+          model.dispose();
+        });
+      }
     };
   }, [playgroundId]);
 
@@ -469,10 +476,22 @@ const PlaygroundEditor = ({
     loadTheme();
   }, [editorTheme]);
 
+  useEffect(() => {
+    if (monacoRef.current && editorRef.current) {
+      const currentModel = editorRef.current.getModel();
+      monacoRef.current.editor.getModels().forEach((model) => {
+        if (model !== currentModel) {
+          model.dispose();
+        }
+      });
+    }
+  }, [activeFile]);
+
   return (
     <div className="h-full relative">
       <Editor
         height={"100%"}
+        path={(activeFile as any)?.id || activeFile?.filename || "default"}
         defaultValue={content}
         onChange={(value) => onContentChange(value || "")}
         onMount={handleEditorDidMount}
