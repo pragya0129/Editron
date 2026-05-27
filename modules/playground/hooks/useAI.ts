@@ -76,13 +76,13 @@ export const useAI = create<AIState>((set, get) => {
         userGroqKey: keys.groq,
         userMistralKey: keys.mistral,
 
-        setProvider: (provider) => set({ provider }),
-        toggleChat: () => set((s) => ({ isChatOpen: !s.isChatOpen })),
+        setProvider: (provider: AIProvider) => set({ provider }),
+        toggleChat: () => set((s: AIState) => ({ isChatOpen: !s.isChatOpen })),
         openChat: () => set({ isChatOpen: true }),
         closeChat: () => set({ isChatOpen: false }),
 
-        addMessage: (message) =>
-            set((s) => ({
+        addMessage: (message: Omit<ChatMessage, "id" | "timestamp">) =>
+            set((s: AIState) => ({
                 chatMessages: [
                     ...s.chatMessages,
                     {
@@ -94,7 +94,7 @@ export const useAI = create<AIState>((set, get) => {
             })),
 
         clearChat: () => set({ chatMessages: [] }),
-        setIsGenerating: (val) => set({ isGenerating: val }),
+        setIsGenerating: (val: boolean) => set({ isGenerating: val }),
 
         toggleInlineSuggestions: () => {
             const next = !get().inlineSuggestionsEnabled;
@@ -107,7 +107,7 @@ export const useAI = create<AIState>((set, get) => {
             set({ editorTheme: theme });
         },
 
-        setUserApiKey: (provider, key) => {
+        setUserApiKey: (provider: AIProvider, key: string) => {
             const storageKeys: Record<AIProvider, string> = {
                 gemini: STORAGE_KEYS.GEMINI_KEY,
                 groq: STORAGE_KEYS.GROQ_KEY,
@@ -117,15 +117,15 @@ export const useAI = create<AIState>((set, get) => {
                 localStorage.setItem(storageKeys[provider], key);
             } catch { }
 
-            const stateKeys: Record<AIProvider, string> = {
-                gemini: "userGeminiKey",
-                groq: "userGroqKey",
-                mistral: "userMistralKey",
+            const stateUpdates: Record<AIProvider, Partial<AIState>> = {
+                gemini: { userGeminiKey: key },
+                groq: { userGroqKey: key },
+                mistral: { userMistralKey: key },
             };
-            set({ [stateKeys[provider]]: key } as any);
+            set(stateUpdates[provider]);
         },
 
-        getUserApiKey: (provider) => {
+        getUserApiKey: (provider?: AIProvider) => {
             const p = provider || get().provider;
             if (p === "gemini") return get().userGeminiKey;
             if (p === "groq") return get().userGroqKey;
