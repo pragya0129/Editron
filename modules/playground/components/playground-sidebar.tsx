@@ -100,11 +100,9 @@ export const PlaygroundSidebar = () => {
                         />
                     )}
 
-                    {activeTab === "env" && writeFileSync && (
+                    {activeTab === "env" && (
                         <EnvManager
-                            templateData={templateData}
                             instance={instance}
-                            writeFileSync={writeFileSync}
                         />
                     )}
                 </div>
