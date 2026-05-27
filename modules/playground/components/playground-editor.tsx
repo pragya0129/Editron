@@ -11,6 +11,7 @@ import {
 } from "@/modules/playground/lib/editor-config";
 import type { TemplateFile } from "@/modules/playground/lib/path-to-json";
 import { useAI } from "@/modules/playground/hooks/useAI";
+import { usePreferences } from "@/modules/playground/hooks/usePreferences";
 
 import prettier from "prettier/standalone";
 import prettierPluginBabel from "prettier/plugins/babel";
@@ -434,7 +435,7 @@ const PlaygroundEditor = ({
     };
   }, [playgroundId]);
 
-  const { editorTheme } = useAI();
+  const { editorTheme, fontLigatures } = usePreferences();
 
   useEffect(() => {
     async function loadTheme() {
@@ -483,6 +484,7 @@ const PlaygroundEditor = ({
         }
         options={{
           ...defaultEditorOptions,
+          fontLigatures: fontLigatures,
           inlineSuggest: { enabled: true },
         }}
       />
