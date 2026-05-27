@@ -8,9 +8,13 @@ import { usePlaygroundContext } from "@/modules/playground/contexts/playground-c
 import { useWrappedFileOperations } from "@/modules/playground/hooks/useWrappedFileOperations";
 import { useFileExplorer } from "@/modules/playground/hooks/useFileExplorer";
 import { TemplateFile } from "../lib/path-to-json";
+import { GitBranch } from "lucide-react";
+import { GitSourceControl } from "./git-source-control";
+import { GitDiffViewer } from "./git-diff-viewer";
 
 export const PlaygroundSidebar = () => {
-    const [activeTab, setActiveTab] = useState<"explorer" | "packages" | "env">("explorer");
+    const [activeTab, setActiveTab] = useState<"explorer" | "packages" | "env" | "git">("explorer");
+    const [diffFile, setDiffFile] = useState<string | null>(null);
     const { state } = useSidebar();
     const { templateData, instance, writeFileSync } = usePlaygroundContext();
     const { openFiles, activeFileId, openFile } = useFileExplorer();
@@ -59,6 +63,13 @@ export const PlaygroundSidebar = () => {
                 >
                     <Server className="h-5 w-5" />
                 </button>
+                <button
+                    onClick={() => setActiveTab("git")}
+                    className={`p-2 rounded-lg transition-colors ${activeTab === "git" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}
+                    title="Source Control"
+                >
+                    <GitBranch className="h-5 w-5" />
+                </button>
             </div>
 
             {/* Primary Sidebar Content */}
@@ -68,6 +79,7 @@ export const PlaygroundSidebar = () => {
                         {activeTab === "explorer" && "Explorer"}
                         {activeTab === "packages" && "Dependencies"}
                         {activeTab === "env" && "Environment Variables"}
+                        {activeTab === "git" && "Source Control"}
                     </h2>
                 </div>
 
@@ -107,8 +119,17 @@ export const PlaygroundSidebar = () => {
                             writeFileSync={writeFileSync}
                         />
                     )}
+
+                    {activeTab === "git" && (
+                        <GitSourceControl onOpenFileDiff={(filepath) => setDiffFile(filepath)} />
+                    )}
                 </div>
             </div>
+
+            <GitDiffViewer 
+                filepath={diffFile} 
+                onClose={() => setDiffFile(null)} 
+            />
         </div>
     );
 };
