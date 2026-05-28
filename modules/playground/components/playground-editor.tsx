@@ -28,6 +28,15 @@ import { useSession } from "next-auth/react";
 let inlineProviderRegistered = false;
 let formatterRegistered = false;
 
+// Module-scoped debounce map for per-model debouncing in split-view
+const inlineCompletionDebounce = new Map<
+  string,
+  {
+    timer: ReturnType<typeof setTimeout>;
+    resolve: () => void;
+  }
+>();
+
 export interface PlaygroundEditorProps {
   activeFile: TemplateFile | undefined;
   content: string;
@@ -45,7 +54,6 @@ const PlaygroundEditor = ({
   const playgroundId = params?.id as string;
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bindingRef = useRef<{ destroy: () => void } | null>(null);
   const { data: session } = useSession();
   const [isMounted, setIsMounted] = useState(false);
@@ -182,12 +190,35 @@ const PlaygroundEditor = ({
 
           // Wait with debounce (return promise that resolves after delay)
           await new Promise<void>((resolve) => {
-            if (debounceTimerRef.current)
-              clearTimeout(debounceTimerRef.current);
-            debounceTimerRef.current = setTimeout(
+            const key = model.uri.toString();
+
+            const pending = inlineCompletionDebounce.get(key);
+
+            if (pending) {
+              clearTimeout(pending.timer);
+              pending.resolve();
+            }
+
+            const timer = setTimeout(() => {
+              inlineCompletionDebounce.delete(key);
+              resolve();
+            }, EDITOR_CONFIG.INLINE_SUGGESTION_DEBOUNCE_MS);
+
+            inlineCompletionDebounce.set(key, {
+              timer,
               resolve,
-              EDITOR_CONFIG.INLINE_SUGGESTION_DEBOUNCE_MS,
-            );
+            });
+
+            token.onCancellationRequested(() => {
+              const current = inlineCompletionDebounce.get(key);
+
+              if (current?.timer === timer) {
+                inlineCompletionDebounce.delete(key);
+              }
+
+              clearTimeout(timer);
+              resolve();
+            });
           });
 
           if (token.isCancellationRequested) return { items: [] };
