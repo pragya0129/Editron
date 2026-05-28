@@ -139,6 +139,8 @@ shrink-0
                         )}
 
                         <span
+                          role="button"
+                          tabIndex={0}
                           className={`
                             h-4 w-4 rounded-sm flex items-center justify-center transition-all cursor-pointer
                             hover:bg-destructive/10 hover:text-destructive
@@ -149,7 +151,13 @@ shrink-0
                             e.stopPropagation();
                             closeFile(paneId, file.id);
                           }}
-                          role="button"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              closeFile(paneId, file.id);
+                            }
+                          }}
                           aria-label={`Close ${file.filename}.${file.fileExtension}`}
                         >
                           <X className="h-3 w-3" />

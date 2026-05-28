@@ -24,11 +24,9 @@ import { fetchCollabToken, getOrCreateYDoc } from "@/lib/yjs";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-// Module-scoped guards and disposables for singleton registrations
+// Module-scoped guards for singleton registrations
 let inlineProviderRegistered = false;
 let formatterRegistered = false;
-let inlineProviderDisposable: { dispose: () => void } | null = null;
-let formatterDisposable: { dispose: () => void } | null = null;
 
 export interface PlaygroundEditorProps {
   activeFile: TemplateFile | undefined;
@@ -79,11 +77,6 @@ const PlaygroundEditor = ({
   const registerPrettierFormatter = (monaco: Monaco) => {
     // Singleton guard: only register once globally
     if (formatterRegistered) return;
-
-    if (formatterDisposable) {
-      formatterDisposable.dispose();
-      formatterDisposable = null;
-    }
 
     const languages = ["javascript", "typescript", "html", "css", "json"];
 
@@ -146,10 +139,6 @@ const PlaygroundEditor = ({
       }),
     );
 
-    formatterDisposable = {
-      dispose: () => disposables.forEach((d) => d.dispose()),
-    };
-
     formatterRegistered = true;
   };
 
@@ -157,113 +146,105 @@ const PlaygroundEditor = ({
     // Singleton guard: only register once globally
     if (inlineProviderRegistered) return;
 
-    // Dispose previous provider if exists
-    if (inlineProviderDisposable) {
-      inlineProviderDisposable.dispose();
-      inlineProviderDisposable = null;
-    }
+    monaco.languages.registerInlineCompletionsProvider(
+      { pattern: "**" },
+      {
+        provideInlineCompletions: async (model, position, _context, token) => {
+          // Check if inline suggestions are enabled
+          if (!useAI.getState().inlineSuggestionsEnabled) return { items: [] };
+          if (token.isCancellationRequested) return { items: [] };
 
-    inlineProviderDisposable =
-      monaco.languages.registerInlineCompletionsProvider(
-        { pattern: "**" },
-        {
-          provideInlineCompletions: async (model, position, context, token) => {
-            // Check if inline suggestions are enabled
-            if (!useAI.getState().inlineSuggestionsEnabled)
-              return { items: [] };
-            if (token.isCancellationRequested) return { items: [] };
+          // Gather context: lines around cursor
+          const lineCount = model.getLineCount();
+          const currentLine = model.getLineContent(position.lineNumber);
+          const textBeforeCursor = currentLine.substring(
+            0,
+            position.column - 1,
+          );
 
-            // Gather context: lines around cursor
-            const lineCount = model.getLineCount();
-            const currentLine = model.getLineContent(position.lineNumber);
-            const textBeforeCursor = currentLine.substring(
-              0,
-              position.column - 1,
-            );
+          // Don't trigger on empty lines or very short input
+          if (textBeforeCursor.trim().length < 3) return { items: [] };
 
-            // Don't trigger on empty lines or very short input
-            if (textBeforeCursor.trim().length < 3) return { items: [] };
-
-            // Build context from surrounding lines
-            const startLine = Math.max(1, position.lineNumber - 20);
-            const endLine = Math.min(lineCount, position.lineNumber + 5);
-            const contextLines: string[] = [];
-            for (let i = startLine; i <= endLine; i++) {
-              if (i === position.lineNumber) {
-                contextLines.push(textBeforeCursor + "█"); // cursor marker
-              } else {
-                contextLines.push(model.getLineContent(i));
-              }
+          // Build context from surrounding lines
+          const startLine = Math.max(1, position.lineNumber - 20);
+          const endLine = Math.min(lineCount, position.lineNumber + 5);
+          const contextLines: string[] = [];
+          for (let i = startLine; i <= endLine; i++) {
+            if (i === position.lineNumber) {
+              contextLines.push(textBeforeCursor + "█"); // cursor marker
+            } else {
+              contextLines.push(model.getLineContent(i));
             }
+          }
 
-            const prompt = contextLines.join("\n");
-            const language = model.getLanguageId();
+          const prompt = contextLines.join("\n");
+          const language = model.getLanguageId();
 
-            // Wait with debounce (return promise that resolves after delay)
-            await new Promise<void>((resolve) => {
-              if (debounceTimerRef.current)
-                clearTimeout(debounceTimerRef.current);
-              debounceTimerRef.current = setTimeout(
-                resolve,
-                EDITOR_CONFIG.INLINE_SUGGESTION_DEBOUNCE_MS,
-              );
+          // Wait with debounce (return promise that resolves after delay)
+          await new Promise<void>((resolve) => {
+            if (debounceTimerRef.current)
+              clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = setTimeout(
+              resolve,
+              EDITOR_CONFIG.INLINE_SUGGESTION_DEBOUNCE_MS,
+            );
+          });
+
+          if (token.isCancellationRequested) return { items: [] };
+
+          try {
+            const { provider, getUserApiKey } = useAI.getState();
+            const userApiKey = getUserApiKey();
+
+            const res = await fetch("/api/completion", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                prompt,
+                language,
+                provider,
+                userApiKey: userApiKey || undefined,
+              }),
             });
 
-            if (token.isCancellationRequested) return { items: [] };
+            if (!res.ok) return { items: [] };
 
-            try {
-              const { provider, getUserApiKey } = useAI.getState();
-              const userApiKey = getUserApiKey();
+            const data = await res.json();
+            const completion = data.completion?.trim();
 
-              const res = await fetch("/api/completion", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  prompt,
-                  language,
-                  provider,
-                  userApiKey: userApiKey || undefined,
-                }),
-              });
+            if (!completion) return { items: [] };
 
-              if (!res.ok) return { items: [] };
-
-              const data = await res.json();
-              const completion = data.completion?.trim();
-
-              if (!completion) return { items: [] };
-
-              // Clean up completion - remove markdown code fences if present
-              let cleanCompletion = completion;
-              if (cleanCompletion.startsWith("```")) {
-                const lines = cleanCompletion.split("\n");
-                lines.shift(); // remove opening fence
-                if (lines[lines.length - 1]?.trim() === "```") lines.pop();
-                cleanCompletion = lines.join("\n");
-              }
-
-              return {
-                items: [
-                  {
-                    insertText: cleanCompletion,
-                    range: {
-                      startLineNumber: position.lineNumber,
-                      startColumn: position.column,
-                      endLineNumber: position.lineNumber,
-                      endColumn: position.column,
-                    },
-                  },
-                ],
-              };
-            } catch (error) {
-              console.warn("Inline completion error:", error);
-              return { items: [] };
+            // Clean up completion - remove markdown code fences if present
+            let cleanCompletion = completion;
+            if (cleanCompletion.startsWith("```")) {
+              const lines = cleanCompletion.split("\n");
+              lines.shift(); // remove opening fence
+              if (lines[lines.length - 1]?.trim() === "```") lines.pop();
+              cleanCompletion = lines.join("\n");
             }
-          },
 
-          freeInlineCompletions: () => {},
+            return {
+              items: [
+                {
+                  insertText: cleanCompletion,
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: position.column,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column,
+                  },
+                },
+              ],
+            };
+          } catch (error) {
+            console.warn("Inline completion error:", error);
+            return { items: [] };
+          }
         },
-      );
+
+        freeInlineCompletions: () => {},
+      },
+    );
 
     inlineProviderRegistered = true;
   };
@@ -479,7 +460,7 @@ const PlaygroundEditor = ({
   return (
     <div className="h-full relative">
       <Editor
-        height={"100%"}
+        height="100%"
         defaultValue={content}
         onChange={(value) => onContentChange(value || "")}
         onMount={handleEditorDidMount}

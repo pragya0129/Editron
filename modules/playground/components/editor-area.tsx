@@ -29,6 +29,30 @@ const PlaygroundEditor = dynamic(
   { ssr: false },
 );
 
+const generateFileId = (file: TemplateFile, root: TemplateFolder): string => {
+  const findPath = (
+    items: (TemplateFile | TemplateFolder)[],
+    currentPath = "",
+  ): string | null => {
+    for (const item of items) {
+      if ("folderName" in item) {
+        const result = findPath(
+          item.items,
+          `${currentPath}/${item.folderName}`,
+        );
+
+        if (result) return result;
+      } else if (item === file) {
+        return `${currentPath}/${item.filename}.${item.fileExtension}`;
+      }
+    }
+
+    return null;
+  };
+
+  return findPath(root.items) || crypto.randomUUID();
+};
+
 interface EditorAreaProps {
   handleDownloadZip: () => void;
 }
@@ -172,7 +196,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 
       const defaultFile = findDefaultFile(templateData.items);
       if (defaultFile && editorPanes[0]) {
-        const defaultFileId = (defaultFile as TemplateFile & { id: string }).id;
+        const defaultFileId = generateFileId(defaultFile, templateData);
         openFile(defaultFile);
         globalSetActiveFileId(defaultFileId);
         setEditorPanes((prev) =>
