@@ -9,6 +9,7 @@ vi.mock("next/server", () => ({
 }));
 
 import { tools, MAX_FILE_CONTENT_CHARS, schemas } from "./chat/tools";
+import { schemas as chatSchemas } from "./chat/route";
 
 describe("AI tool payload validation", () => {
     const MAX = MAX_FILE_CONTENT_CHARS;
@@ -59,10 +60,8 @@ describe("/api/chat - Payload Size Validation", () => {
                 messages: [{ role: "user", content }],
                 provider: "gemini"
             };
-            // Payload size should be under total limit and content at max
-            const totalSize = JSON.stringify(payload).length;
-            expect(totalSize).toBeLessThanOrEqual(SIZE_LIMITS.MAX_TOTAL_PAYLOAD);
-            expect(content.length).toBe(SIZE_LIMITS.MAX_MESSAGE_CONTENT);
+            const parsed = chatSchemas.RequestBodySchema.safeParse(payload);
+            expect(parsed.success).toBe(true);
         });
 
         it("should reject message content exceeding limit", () => {
@@ -71,8 +70,8 @@ describe("/api/chat - Payload Size Validation", () => {
                 messages: [{ role: "user", content }],
                 provider: "gemini"
             };
-            // This payload should fail Zod validation in real scenario
-            expect(content.length).toBeGreaterThan(SIZE_LIMITS.MAX_MESSAGE_CONTENT);
+            const parsed = chatSchemas.RequestBodySchema.safeParse(payload);
+            expect(parsed.success).toBe(false);
         });
     });
 
@@ -198,13 +197,13 @@ describe("/api/chat - Payload Size Validation", () => {
             expect((payload.messages[0] as any).parts).toBeUndefined();
         });
 
-        it("accepts message with empty parts array if no content", () => {
-            // Should be rejected by schema as it requires either content or parts with items
+        it("rejects message with empty parts and no content", () => {
             const payload = {
                 messages: [{ role: "user", parts: [] }],
                 provider: "gemini"
             };
-            expect(payload.messages[0].parts).toEqual([]);
+            const parsed = chatSchemas.RequestBodySchema.safeParse(payload);
+            expect(parsed.success).toBe(false);
         });
     });
 

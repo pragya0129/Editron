@@ -216,3 +216,10 @@ export async function POST(request: NextRequest) {
         return handleApiError(error, "POST /api/chat");
     }
 }
+
+// Export schemas for testing and external validation
+export const schemas = {
+    MessagePartSchema,
+    MessageSchema,
+    RequestBodySchema,
+};
