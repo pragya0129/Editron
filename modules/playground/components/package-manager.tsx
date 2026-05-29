@@ -239,7 +239,7 @@ export function PackageManager({
                       className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => handleRemove(name)}
                       disabled={loadingPkg === name}
-                      aria-label={`Remove dependency ${name}`}
+                      aria-label={`Remove dev dependency ${name}`}
                     >
                       {loadingPkg === name ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3 text-red-500 hover:text-red-600" />}
                     </Button>
