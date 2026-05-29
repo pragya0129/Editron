@@ -138,8 +138,6 @@ const WebContainerPreview = ({
       write(data: string) {
         if (terminalRef.current) {
           writeTerminal(data);
-        } else {
-          console.log("[WebContainer Install] ", data.trim());
         }
 
         const now = Date.now();
