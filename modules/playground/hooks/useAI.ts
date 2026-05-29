@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  STORAGE_KEYS,
-  DEFAULT_EDITOR_THEME,
-} from "@/lib/constants/config";
+import { STORAGE_KEYS } from "@/lib/constants/config";
 
 import { create } from "zustand";
 import { TemplateFile, TemplateFolder } from "../lib/path-to-json";
@@ -25,7 +22,6 @@ interface AIState {
     chatMessages: ChatMessage[];
     isGenerating: boolean;
     inlineSuggestionsEnabled: boolean;
-    editorTheme: string;
 
     // User API keys (persisted to localStorage)
     userGeminiKey: string;
@@ -43,7 +39,6 @@ interface AIState {
     setUserApiKey: (provider: AIProvider, key: string) => void;
     getUserApiKey: (provider?: AIProvider) => string;
     toggleInlineSuggestions: () => void;
-    setEditorTheme: (theme: string) => void;
 }
 
 function loadUserKeys() {
@@ -71,7 +66,6 @@ export const useAI = create<AIState>((set, get) => {
         chatMessages: [],
         isGenerating: false,
         inlineSuggestionsEnabled: inlineEnabled,
-        editorTheme: typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.EDITOR_THEME) || DEFAULT_EDITOR_THEME : DEFAULT_EDITOR_THEME,
         userGeminiKey: keys.gemini,
         userGroqKey: keys.groq,
         userMistralKey: keys.mistral,
@@ -102,12 +96,7 @@ export const useAI = create<AIState>((set, get) => {
             set({ inlineSuggestionsEnabled: next });
         },
 
-        setEditorTheme: (theme: string) => {
-            try { localStorage.setItem(STORAGE_KEYS.EDITOR_THEME, theme); } catch { }
-            set({ editorTheme: theme });
-        },
-
-        setUserApiKey: (provider: AIProvider, key: string) => {
+        setUserApiKey: (provider, key) => {
             const storageKeys: Record<AIProvider, string> = {
                 gemini: STORAGE_KEYS.GEMINI_KEY,
                 groq: STORAGE_KEYS.GROQ_KEY,
