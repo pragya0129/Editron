@@ -26,7 +26,6 @@ async function handleUserAccountSync(
   const sessionState = typeof account.session_state === 'string' ? account.session_state : undefined;
 
   try {
-    // === ATOMIC TRANSACTION ===
     // All database operations execute atomically.
     // If any operation fails, the entire transaction rolls back.
     await db.$transaction(async (tx) => {
