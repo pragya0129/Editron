@@ -120,7 +120,14 @@ export function handleApiError(error: unknown, context: string): NextResponse {
 
 // --- IP Extraction ---
 export function getClientIp(request: Request): string {
+    // Prioritize x-real-ip as it is typically set by the reverse proxy/load balancer
+    // and is much harder for malicious clients to spoof than x-forwarded-for.
+    const realIp = request.headers.get("x-real-ip");
+    if (realIp) return realIp.trim();
+
+    // Fallback to x-forwarded-for
     const forwarded = request.headers.get("x-forwarded-for");
     if (forwarded) return forwarded.split(",")[0].trim();
+    
     return "unknown";
 }
