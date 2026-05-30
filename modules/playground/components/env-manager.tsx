@@ -154,7 +154,7 @@ export function EnvManager({
                     <KeyRound className="h-3.5 w-3.5" />
                     Environment Variables
                 </div>
-                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleAddVar} title="Add Variable">
+                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleAddVar} title="Add Variable" aria-label="Add environment variable">
                     <Plus className="h-3.5 w-3.5" />
                 </Button>
             </SidebarGroupLabel>
@@ -178,20 +178,18 @@ export function EnvManager({
                             return (
                                 <div
                                     key={idx}
-                                    className={`flex items-center gap-1.5 border p-1.5 rounded bg-muted/20 ${
-                                        itemHasError ? "border-destructive/40 bg-destructive/5" : "border-border"
-                                    }`}
+                                    className={`flex items-center gap-1.5 border p-1.5 rounded bg-muted/20 ${itemHasError ? "border-destructive/40 bg-destructive/5" : "border-border"
+                                        }`}
                                 >
                                     <div className="flex flex-col flex-1 gap-1">
                                         <Input
                                             value={v.key}
                                             onChange={(e) => handleUpdateVar(idx, "key", e.target.value)}
                                             placeholder="API_KEY"
-                                            className={`h-6 text-[10px] font-mono rounded-sm bg-background shadow-none border ${
-                                                itemHasError
-                                                    ? "border-destructive/60 text-destructive focus-visible:ring-destructive"
-                                                    : "border-transparent focus-visible:ring-ring"
-                                            }`}
+                                            className={`h-6 text-[10px] font-mono rounded-sm bg-background shadow-none border ${itemHasError
+                                                ? "border-destructive/60 text-destructive focus-visible:ring-destructive"
+                                                : "border-transparent focus-visible:ring-ring"
+                                                }`}
                                         />
                                         {isMalformed && (
                                             <span className="text-[8px] text-destructive leading-tight px-1 font-sans">
@@ -216,6 +214,7 @@ export function EnvManager({
                                         variant="ghost"
                                         className="h-8 w-8 text-muted-foreground hover:text-red-500 shrink-0"
                                         onClick={() => handleRemoveVar(idx)}
+                                        aria-label="Delete environment variable"
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
