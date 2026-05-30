@@ -119,15 +119,41 @@ export function handleApiError(error: unknown, context: string): NextResponse {
 }
 
 // --- IP Extraction ---
-export function getClientIp(request: Request): string {
-    // Prioritize x-real-ip as it is typically set by the reverse proxy/load balancer
-    // and is much harder for malicious clients to spoof than x-forwarded-for.
-    const realIp = request.headers.get("x-real-ip");
-    if (realIp) return realIp.trim();
+const TRUSTED_PROXIES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
-    // Fallback to x-forwarded-for
-    const forwarded = request.headers.get("x-forwarded-for");
-    if (forwarded) return forwarded.split(",")[0].trim();
-    
+export function getClientIp(request: Request | any): string {
+    // Next.js NextRequest has an 'ip' property which is securely populated by the platform
+    if (request.ip) {
+        const ip = request.ip.trim();
+        if (ip.length > 0) return ip;
+    }
+
+    // Identify the direct connection IP (only available in Node.js environments, not Edge)
+    const remoteAddr = (request.socket?.remoteAddress || request.connection?.remoteAddress || "").trim();
+
+    // Determine if we should trust proxy headers
+    // If remoteAddr is unavailable (e.g. Edge runtime), we assume the platform handles trust.
+    const isTrustedProxy = !remoteAddr || TRUSTED_PROXIES.has(remoteAddr);
+
+    if (isTrustedProxy) {
+        // Prioritize x-real-ip as it is typically set by the reverse proxy/load balancer
+        const realIpHeader = request.headers.get("x-real-ip");
+        if (realIpHeader) {
+            const realIp = realIpHeader.trim();
+            if (realIp.length > 0) return realIp;
+        }
+
+        // Fallback to x-forwarded-for
+        const forwardedHeader = request.headers.get("x-forwarded-for");
+        if (forwardedHeader) {
+            const forwarded = forwardedHeader.split(",")[0].trim();
+            if (forwarded.length > 0) return forwarded;
+        }
+    }
+
+    if (remoteAddr.length > 0) {
+        return remoteAddr;
+    }
+
     return "unknown";
 }
