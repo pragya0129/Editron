@@ -70,13 +70,13 @@ export const useAI = create<AIState>((set, get) => {
         userGroqKey: keys.groq,
         userMistralKey: keys.mistral,
 
-        setProvider: (provider) => set({ provider }),
-        toggleChat: () => set((s) => ({ isChatOpen: !s.isChatOpen })),
+        setProvider: (provider: AIProvider) => set({ provider }),
+        toggleChat: () => set((s: AIState) => ({ isChatOpen: !s.isChatOpen })),
         openChat: () => set({ isChatOpen: true }),
         closeChat: () => set({ isChatOpen: false }),
 
-        addMessage: (message) =>
-            set((s) => ({
+        addMessage: (message: Omit<ChatMessage, "id" | "timestamp">) =>
+            set((s: AIState) => ({
                 chatMessages: [
                     ...s.chatMessages,
                     {
@@ -88,7 +88,7 @@ export const useAI = create<AIState>((set, get) => {
             })),
 
         clearChat: () => set({ chatMessages: [] }),
-        setIsGenerating: (val) => set({ isGenerating: val }),
+        setIsGenerating: (val: boolean) => set({ isGenerating: val }),
 
         toggleInlineSuggestions: () => {
             const next = !get().inlineSuggestionsEnabled;
@@ -115,7 +115,7 @@ export const useAI = create<AIState>((set, get) => {
             set(partialState);
         },
 
-        getUserApiKey: (provider) => {
+        getUserApiKey: (provider?: AIProvider) => {
             const p = provider || get().provider;
             if (p === "gemini") return get().userGeminiKey;
             if (p === "groq") return get().userGroqKey;
