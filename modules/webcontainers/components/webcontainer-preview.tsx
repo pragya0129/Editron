@@ -967,7 +967,7 @@ const WebContainerPreview = ({
                   }}
                   title="Refresh preview"
                 >
- feat/split-view-editor
+ feat/runtime-activity-panel
                   <RefreshCw
                     size={13}
                     className={
