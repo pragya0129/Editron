@@ -70,6 +70,35 @@
   }
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee {
+  overflow: hidden;
+  position: relative;
+}
+
+.marquee-track {
+  display: inline-flex;
+  align-items: stretch;
+  width: max-content;
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+  animation-timing-function: linear;
+  will-change: transform;
+}
+
+.marquee-track:hover,
+.marquee-track:focus-within {
+  animation-play-state: paused;
+}
+
 .animate-shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
 }

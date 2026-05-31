@@ -133,10 +133,19 @@ export function HomePageClient({ popularTemplates }: HomePageClientProps) {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {popularTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
+            <div className="overflow-hidden relative py-2">
+              <div className="marquee">
+                <div className="marquee-track flex gap-6">
+                  {popularTemplates.concat(popularTemplates).map((template, index) => (
+                    <div
+                      key={`${template.id}-${index}`}
+                      className="flex-none min-w-[18rem] max-w-[18rem] sm:min-w-[22rem] sm:max-w-[22rem]"
+                    >
+                      <TemplateCard template={template} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 
