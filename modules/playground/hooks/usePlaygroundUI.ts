@@ -16,6 +16,7 @@ interface PlaygroundUIState {
   showPreferences: boolean;
   isCommandPaletteOpen: boolean;
   isDeployDialogOpen: boolean;
+  isTimeTravelOpen: boolean;
   cursorPosition: { line: number; col: number };
 
   // Actions
@@ -24,8 +25,10 @@ interface PlaygroundUIState {
   setShowPreferences: (v: boolean) => void;
   setIsCommandPaletteOpen: (v: boolean) => void;
   setIsDeployDialogOpen: (v: boolean) => void;
+  setIsTimeTravelOpen: (v: boolean) => void;
   setCursorPosition: (pos: { line: number; col: number }) => void;
   togglePreview: () => void;
+  toggleTimeTravel: () => void;
   resetUI: () => void;
 }
 
@@ -35,6 +38,7 @@ export const usePlaygroundUI = create<PlaygroundUIState>((set) => ({
   showPreferences: false,
   isCommandPaletteOpen: false,
   isDeployDialogOpen: false,
+  isTimeTravelOpen: false,
   cursorPosition: { line: 1, col: 1 },
 
   setIsPreviewVisible: (v) =>
@@ -45,9 +49,12 @@ export const usePlaygroundUI = create<PlaygroundUIState>((set) => ({
   setShowPreferences: (v) => set({ showPreferences: v }),
   setIsCommandPaletteOpen: (v) => set({ isCommandPaletteOpen: v }),
   setIsDeployDialogOpen: (v) => set({ isDeployDialogOpen: v }),
+  setIsTimeTravelOpen: (v) => set({ isTimeTravelOpen: v }),
   setCursorPosition: (pos) => set({ cursorPosition: pos }),
   togglePreview: () =>
     set((s) => ({ isPreviewVisible: !s.isPreviewVisible })),
+  toggleTimeTravel: () =>
+    set((s) => ({ isTimeTravelOpen: !s.isTimeTravelOpen })),
   resetUI: () =>
     set({
       isPreviewVisible: false,
@@ -55,6 +62,7 @@ export const usePlaygroundUI = create<PlaygroundUIState>((set) => ({
       showPreferences: false,
       isCommandPaletteOpen: false,
       isDeployDialogOpen: false,
+      isTimeTravelOpen: false,
       cursorPosition: { line: 1, col: 1 },
     }),
 }));
