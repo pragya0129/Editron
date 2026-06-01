@@ -1,7 +1,7 @@
 "use client";
 
 import { TIMEOUTS } from "@/lib/constants/config";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import type { editor as MonacoEditor } from "monaco-editor";
 import { KeyCode } from "monaco-editor";
 import {
