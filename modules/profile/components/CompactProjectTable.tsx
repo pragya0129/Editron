@@ -2,10 +2,42 @@
 
 import Link from "next/link"
 import { format } from "date-fns"
+import type { Project } from "@/modules/dashboard/types"
 import type { Playground } from "@prisma/client"
 import { Badge } from "@/components/ui/badge"
-
-export type CompactProjectRow = Pick<Playground, 'id' | 'title' | 'description' | 'template' | 'updatedAt'> & { Starmark?: { isMarked: boolean }[] };
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react"
+import { MoreHorizontal, Edit3, Trash2, ExternalLink, Eye, Star } from "lucide-react"
+import { toast } from "sonner"
 
 interface CompactProjectTableProps {
     projects: CompactProjectRow[]
@@ -27,17 +59,17 @@ export default function CompactProjectTable({
 }: CompactProjectTableProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
-    const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+    const [selectedProject, setSelectedProject] = useState<CompactProjectRow | null>(null)
     const [editData, setEditData] = useState<EditProjectData>({ title: "", description: "" })
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleEditClick = (project: Project) => {
+    const handleEditClick = (project: CompactProjectRow) => {
         setSelectedProject(project);
         setEditData({ title: project.title, description: project.description || "" })
         setEditDialogOpen(true)
     }
 
-    const handleDeleteClick = async (project: Project) => {
+    const handleDeleteClick = async (project: CompactProjectRow) => {
         setSelectedProject(project)
         setDeleteDialogOpen(true)
     }
