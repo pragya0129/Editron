@@ -1,8 +1,7 @@
 "use client";
 
-import { EDITOR_CONFIG } from "@/lib/constants/config";
-import { useRef, useEffect, useState } from "react";
-import Editor, { type Monaco } from "@monaco-editor/react";
+import { TIMEOUTS } from "@/lib/constants/config";
+import React, { useRef, useEffect, useState } from "react";
 import type { editor as MonacoEditor } from "monaco-editor";
 import { KeyCode } from "monaco-editor";
 import {
@@ -25,6 +24,8 @@ import { MonacoBinding } from "y-monaco";
 import { fetchCollabToken, getOrCreateYDoc } from "@/lib/yjs";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+import type { Monaco } from "@monaco-editor/react";
 
 // Module-scoped guards for singleton registrations
 let inlineProviderRegistered = false;
@@ -45,6 +46,17 @@ export interface PlaygroundEditorProps {
   onContentChange: (value: string) => void;
   onCursorChange?: (line: number, col: number) => void;
 }
+const Editor = dynamic(
+  () => import("@monaco-editor/react"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full flex items-center justify-center">
+        Loading editor...
+      </div>
+    ),
+  },
+);
 
 const PlaygroundEditor = ({
   activeFile,
@@ -557,4 +569,4 @@ const PlaygroundEditor = ({
   );
 };
 
-export default PlaygroundEditor;
+export default React.memo(PlaygroundEditor);

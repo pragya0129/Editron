@@ -385,6 +385,7 @@ const WebContainerPreview = ({
               const isCommonFrontendPort = [
                 3000, 5173, 8080, 4200, 8000,
               ].includes(port);
+              setRefreshKey((k) => k + 1);
               setPreviewUrl((prevUrl) => {
                 if (prevUrl && !isCommonFrontendPort) return prevUrl;
                 return url;
