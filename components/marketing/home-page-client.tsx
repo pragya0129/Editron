@@ -133,17 +133,41 @@ export function HomePageClient({ popularTemplates }: HomePageClientProps) {
               </Link>
             </div>
 
-            <div className="overflow-hidden relative py-2">
+            {/* Accessible marquee carousel with proper ARIA labels and keyboard navigation handling */}
+            <div
+              role="region"
+              aria-label="Popular templates carousel"
+              className="overflow-hidden relative py-2"
+            >
               <div className="marquee">
                 <div className="marquee-track flex gap-6">
-                  {popularTemplates.concat(popularTemplates).map((template, index) => (
+                  {/* Primary set - keyboard accessible and screen reader visible */}
+                  {popularTemplates.map((template) => (
                     <div
-                      key={`${template.id}-${index}`}
+                      key={`${template.id}-primary`}
                       className="flex-none min-w-[18rem] max-w-[18rem] sm:min-w-[22rem] sm:max-w-[22rem]"
+                      role="presentation"
                     >
                       <TemplateCard template={template} />
                     </div>
                   ))}
+
+                  {/* Duplicated set for infinite scroll animation - hidden from assistive technology */}
+                  <div
+                    aria-hidden="true"
+                    inert={true}
+                    className="contents"
+                  >
+                    {popularTemplates.map((template) => (
+                      <div
+                        key={`${template.id}-duplicate`}
+                        className="flex-none min-w-[18rem] max-w-[18rem] sm:min-w-[22rem] sm:max-w-[22rem]"
+                        role="presentation"
+                      >
+                        <TemplateCard template={template} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
