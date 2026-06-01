@@ -40,10 +40,10 @@ import { MoreHorizontal, Edit3, Trash2, ExternalLink, Eye, Star } from "lucide-r
 import { toast } from "sonner"
 
 interface CompactProjectTableProps {
-    projects: Project[]
+    projects: CompactProjectRow[]
     onUpdateProject?: (id: string, data: { title: string; description: string }) => Promise<void>
     onDeleteProject?: (id: string) => Promise<void>
-    onDuplicateProject?: (id: string) => Promise<Playground>
+    onDuplicateProject?: (id: string) => Promise<unknown>
 }
 
 interface EditProjectData {
@@ -59,17 +59,17 @@ export default function CompactProjectTable({
 }: CompactProjectTableProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
-    const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+    const [selectedProject, setSelectedProject] = useState<CompactProjectRow | null>(null)
     const [editData, setEditData] = useState<EditProjectData>({ title: "", description: "" })
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleEditClick = (project: Project) => {
+    const handleEditClick = (project: CompactProjectRow) => {
         setSelectedProject(project);
         setEditData({ title: project.title, description: project.description || "" })
         setEditDialogOpen(true)
     }
 
-    const handleDeleteClick = async (project: Project) => {
+    const handleDeleteClick = async (project: CompactProjectRow) => {
         setSelectedProject(project)
         setDeleteDialogOpen(true)
     }
