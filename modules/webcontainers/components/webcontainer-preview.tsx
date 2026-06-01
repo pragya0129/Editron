@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 
 import { transformToWebContainerFormat } from "../hooks/transformer";
@@ -103,9 +103,9 @@ const WebContainerPreview = ({
   const serverReadyCleanupRef = useRef<(() => void) | null>(null);
 
   /** Safely write a message to the embedded terminal (no-op if ref is unavailable). */
-  const writeTerminal = (msg: string) => {
-    terminalRef.current?.writeToTerminal(msg);
-  };
+  const writeTerminal = useCallback((msg: string) => {
+  terminalRef.current?.writeToTerminal(msg);
+}, []);
 
   /** Unsubscribe the current server-ready listener, if any. */
   const cleanupServerReady = () => {
@@ -137,7 +137,8 @@ const WebContainerPreview = ({
     }
   };
 
-  const createInstallOutputStream = (_totalDeps: number) => {
+  const createInstallOutputStream = useCallback(
+  (_totalDeps: number) => {
     let estimatedProgress = 0;
     let lastUpdateTime = Date.now();
 
@@ -196,7 +197,9 @@ const WebContainerPreview = ({
         }
       },
     });
-  };
+  },
+  [writeTerminal],
+);
 
   // Helper to detect package manager
   const detectPackageManager = async (
@@ -831,8 +834,13 @@ const WebContainerPreview = ({
 
     setupContainer();
     // Only re-run when instance or templateData changes, NOT on isSetupInProgress changes
-  }, [instance, templateData, isSetupComplete]);
-
+  }, [
+  instance,
+  templateData,
+  isSetupComplete,
+  createInstallOutputStream,
+  writeTerminal,
+]);
   useEffect(() => {
     return () => {
       cleanupServerReady();
