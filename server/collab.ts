@@ -18,7 +18,11 @@ const server = http.createServer((request, response) => {
 });
 
 const wss = new WebSocketServer({ noServer: true });
-
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is not set. Please provide the DATABASE_URL environment variable or configuration."
+  );
+}
 // Setup MongoDB persistence
 const _mdb = new MongodbPersistence(process.env.DATABASE_URL as string, {
     collectionName: 'yjs-transactions',
