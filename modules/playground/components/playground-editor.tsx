@@ -1,7 +1,7 @@
 "use client";
 
 import { TIMEOUTS } from "@/lib/constants/config";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import type { editor as MonacoEditor } from "monaco-editor";
 import { KeyCode } from "monaco-editor";
 import {
@@ -326,7 +326,7 @@ const PlaygroundEditor = ({
 
   useEffect(() => {
     updateEditorLanguage();
-  }, [updateEditorLanguage]);
+  }, [updateEditorLanguage, activeFile]);
 
   // Bind Yjs to Monaco
   useEffect(() => {
@@ -570,3 +570,4 @@ const PlaygroundEditor = ({
 };
 
 export default React.memo(PlaygroundEditor);
+
